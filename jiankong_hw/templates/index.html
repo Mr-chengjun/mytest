@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<!-- <meta http-equiv="refresh"content="时间;url=刷新的页面"> -->
+<script src = "{{url_for('static',filename ='js/echarts.js')}}"></script>
+<script src = "{{url_for('static',filename ='js/dicgaphic.js')}}"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+<title>监控系统</title>
+<style type="text/css">
+	*{
+		margin: 0;
+		padding: 0;
+	}
+	body{
+		background: #ddd;
+	}
+	ul{
+		list-style: none;
+	}
+	a{
+		text-decoration: none;
+	}
+	.nav{
+		background: #fff;
+		width: 100%;
+		height: 50px;
+		font-size: 20px;
+		line-height: 50px;
+		
+		border-bottom: 1px solid #f60;
+	}
+	.box{
+		margin: 0 auto;
+		width: 1200px;
+	}
+	.fl_l{
+		width: 200px;
+		float: left;
+		border: 1px solid #f4f4f4;
+		background: #fff;
+	}
+	.fl_l li a{
+		border-bottom: 1px solid #eee;
+		text-align: center;
+		display: block;
+		color: #333;
+		font-size: 14px;
+		line-height: 60px;
+	}
+	.fl_l li.active a{
+		background: #f60;
+		color: #fff;
+	}
+	.fl_r{
+		float: right;
+		width: 960px;
+	}
+	.fl_r li{
+		margin-bottom: 30px;
+		background: #fff;
+		font-size: 50px;
+		line-height: 300px;
+		display: block;
+		text-align: center;
+	}
+	.banner{
+		background: #fff;
+		width: 100%;
+		height: 600px;
+		font-size: 40px;
+		line-height: 600px;
+		text-align: center;
+		margin-bottom: 30px;
+	}
+</style>
+</head>
+<body>
+<div class="box">
+<div class="nav">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;用户名：{{ username }}</div>
+	<ul class="fl_l">
+		<li class="active"><a href="##">内存信息</a></li>
+		<li><a href="##">网络信息</a></li>
+		<li><a href="##">硬盘信息</a></li>
+		<li><a href="##">进程信息</a></li>
+		<li><a href="##">动态cpu使用率</a></li>
+	</ul>
+	<ul class="fl_r">
+		<li style="height: 600px;"><div id="business_load" style="width: 600px;height:400px;"><img src="{{ url_for('static',filename = 'images/tutu.png') }}"></div></li>
+		<li style="height: 600px;"><div id="net_load" style="width: 600px;height:400px;"></div></li>
+		<li style="height: 400px;"><div id="disk2_bar" style="width: 600px;height:400px;"></div></li>
+		<li style="height: 500px;"><div id="process_bar" style="width: 600px;height:400px;"></li>
+		<li style="height: 500px;"><div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div></li>
+	</ul>
+	<div style="clear: both;"></div>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static',filename='js/jquery.min.js')}}"></script>
+<script type="text/javascript">
+	$(function(){
+		//设置标杆
+		var _line=parseInt($(window).height()/3);
+		$(window).scroll(function(){
+			//滚动730px，左侧导航固定定位
+			if ($(window).scrollTop()>730) {
+				$('.fl_l').css({'position':'fixed','top':10})
+			}else{
+				$('.fl_l').css({'position':'','top':''})
+			};
+			$('.fl_l li').eq(0).addClass('active');
+			//滚动到标杆位置,左侧导航加active
+			$('.fl_r li').each(function(){
+				var _target=parseInt($(this).offset().top-$(window).scrollTop()-_line);
+				var _i=$(this).index();
+				if (_target<=0) {
+					$('.fl_l li').removeClass('active');
+					$('.fl_l li').eq(_i).addClass('active');
+				}
+				//如果到达页面底部，给左侧导航最后一个加active
+				else if($(document).height()==$(window).scrollTop()+$(window).height()){
+					$('.fl_l li').removeClass('active');
+					$('.fl_l li').eq($('.fl_r li').length-1).addClass('active');
+				}
+			});
+		});
+		$('.fl_l li').click(function(){
+			$(this).addClass('active').siblings().removeClass('active');
+			var _i=$(this).index();
+			 $('body, html').animate({scrollTop:$('.fl_r li').eq(_i).offset().top-_line},500);
+		});
+	});
+</script>
+<!-- 内存的作图  折线图-->
+<script type="text/javascript">
+        
+        var option = {
+            title:{
+                text:'memory info chart'
+            },
+            tooltip:{},
+            legend:{
+                data:['from beijng']
+            },
+            xAxis:{
+                data:["mem_total","mem_used","mem_free","mem_percent"]
+            },
+            yAxis:{
+
+            },
+            series:[{
+                name:'total',
+                type:'bar',
+                data:[{{dic['mem_total']}},{{dic['mem_used']}},{{dic['mem_free']}},{{dic['mem_percent']}}]
+            }]
+        };
+        var myChart = echarts.init(document.getElementById('business_load'));
+        myChart.setOption(option);
+    </script>
+ <!-- -------------------网卡信息图 --------------------------> 
+ 
+<script type="text/javascript">
+        
+        var option = {
+            title:{
+                text:'net info chart'
+            },
+            tooltip:{},
+            legend:{
+                data:['from beijng']
+            },
+            xAxis:{
+                data:["sent","recvs"]
+            },
+            yAxis:{
+
+            },
+            series:[{
+                name:"sent",
+                type:'line',
+                data:[{{dic['sent']}},{{dic['recvs']}}]
+            }]
+        };
+    
+        var myChart = echarts.init(document.getElementById('net_load'));
+
+     
+        myChart.setOption(option);
+    </script>
+    
+   
+<!-- -------------------硬盘信息 --------------------------> 
+   <script type="text/javascript">
+        
+        var option = {
+            title:{
+                text:'disk info chart' 
+            },
+            tooltip:{},
+            legend:{
+                data:['from beijng']
+            },
+            xAxis:{
+                data:["disk_total","disk_used","disk_free"]
+            },
+            yAxis:{
+      
+            },
+            series:[{
+                name:'C',
+                type:'bar',
+                data:[{{ dic['disk_list'][0][1]}},{{dic['disk_list'][0][2]}},{{dic['disk_list'][0][3]}}]
+   
+            },{
+                name:'D',
+                type:'bar',
+                data:[{{ dic['disk_list'][1][1]}},{{dic['disk_list'][1][2]}},{{dic['disk_list'][1][3]}}]
+   
+            },{
+                name:'E',
+                type:'bar',
+                data:[{{ dic['disk_list'][2][1]}},{{dic['disk_list'][2][2]}},{{dic['disk_list'][2][3]}}]
+   
+            },{
+                name:'F',
+                type:'bar',
+                data:[{{ dic['disk_list'][3][1]}},{{dic['disk_list'][3][2]}},{{dic['disk_list'][3][3]}}]
+            },{
+                name:'G',
+                    type:'bar',
+                    data:[{{ dic['disk_list'][4][1]}},{{dic['disk_list'][4][2]}},{{dic['disk_list'][4][3]}}]
+                }]
+            
+        };
+    
+        var myChart = echarts.init(document.getElementById('disk2_bar'));
+        myChart.setOption(option);
+    </script>
+    
+      <!-- 进程信息 -->
+      <script type="text/javascript">
+ // Radialize the colors
+ Highcharts.setOptions({
+     colors: Highcharts.map(Highcharts.getOptions().colors, function (color) {
+         return {
+             radialGradient: {
+                 cx: 0.5,
+                 cy: 0.3,
+                 r: 0.7
+             },
+             stops: [
+                 [0, color],
+                 [1, Highcharts.Color(color).brighten(-0.3).get('rgb')] // darken
+             ]
+         };
+     })
+ });
+
+ // Build the chart
+ Highcharts.chart('process_bar', {
+     chart: {
+         plotBackgroundColor: null,
+         plotBorderWidth: null,
+         plotShadow: false,
+         type: 'pie'
+     },
+     title: {
+         text: 'process Memory utilization ratio(%)'
+     },
+     tooltip: {
+         //pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+     },
+     plotOptions: {
+         pie: {
+             allowPointSelect: true,
+             cursor: 'pointer',
+             dataLabels: {
+                 enabled: true,
+                 format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                 style: {
+                     color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                 },
+                 connectorColor: 'silver'
+             }
+         }
+     },
+     series: [{
+         name: 'occupy',
+         
+         data:[{% for i in dic['pros_list'] %}
+        	 {name: '{{i[0]}}',y:{{ i[1] }}},
+        	 {% endfor %}
+        	 ]
+     }]
+ });
+    </script>
+ <!-- 动态实现  -->
+
+<script type="text/javascript">
+	Highcharts.chart('container', {
+    chart: {
+        type: 'spline',
+        animation: Highcharts.svg, // don't animate in old IE
+        marginRight: 10,
+        events: {
+            load: function () {
+                // set up the updating of the chart each second
+                var series = this.series[0];
+                setInterval(function () {
+                	$.get( "/addnumber", function( data ) {
+              	  	  
+                    var x = (new Date()).getTime(), // current time
+                        y = data.dat;                 
+                    series.addPoint([x, y], true, true);
+                	});
+                    
+                }, 1000);
+            }
+        }
+    },
+
+    time: {
+        useUTC: false
+    },
+
+    title: {
+        text: 'cpu利用率'
+    },
+    xAxis: {
+        type: 'datetime',
+        tickPixelInterval: 150
+    },
+    yAxis: {
+        title: {
+            text: 'cpu'
+        },
+        plotLines: [{
+            value:100,
+            width: 400,
+            color: '#ffffff'
+        }]
+    },
+    tooltip: {
+        headerFormat: '<b>{series.name}</b><br/>',
+        pointFormat: '{point.x:%Y-%m-%d %H:%M:%S}<br/>{point.y:.2f}'
+    },
+    legend: {
+        enabled: false
+    },
+    exporting: {
+        enabled: false
+    },
+    series: [{
+        name: 'Random data',
+        data: (function () {
+            // generate an array of random data
+            var data = [],
+                time = (new Date()).getTime(),
+                i;
+            for (i =19;i>=10; i -= 1) {
+                data.push({
+                    x: time-i*1000,
+                    y: Math.random(),
+                });
+            }
+            return data;
+        }())
+    }]
+});
+</script>
+</body>
+</html>
